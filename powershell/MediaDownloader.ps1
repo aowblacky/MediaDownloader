@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # Media Downloader - Universal Video & Audio Downloader (MP4 / MP3)
 # Modern Multi-Video Queue GUI with Individual Progress Bars & Live Thumbnails
 # by BlAcky
@@ -502,8 +502,29 @@ function Create-QueueCardUI {
             <Border x:Name="PillBadge" Background="#313244" CornerRadius="10" Padding="8,3" HorizontalAlignment="Right">
                 <TextBlock x:Name="TxtBadge" Text="Waiting" FontSize="11" FontWeight="SemiBold" Foreground="#BAC2DE"/>
             </Border>
-            <Button x:Name="BtnRemoveItem" Content="&#x2715;" Background="Transparent" Foreground="#6C7086" BorderThickness="0"
-                    FontSize="12" FontWeight="Bold" Margin="0,6,0,0" Cursor="Hand" HorizontalAlignment="Right"/>
+            <Button x:Name="BtnRemoveItem" Content="&#x2715;" ToolTip="Remove video from queue"
+                    Background="Transparent" Foreground="#6C7086" BorderThickness="0"
+                    FontSize="13" FontWeight="Bold" Margin="0,8,0,0" Cursor="Hand" HorizontalAlignment="Right" Padding="6,2">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="btnBorder" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                        <TextBlock x:Name="btnText" Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="btnBorder" Property="Background" Value="#313244"/>
+                                            <Setter TargetName="btnText" Property="Foreground" Value="#F38BA8"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
         </StackPanel>
     </Grid>
 </Border>
@@ -542,10 +563,16 @@ function Create-QueueCardUI {
         } catch {}
     }
 
-    $itemId = $itemData.Id
-    $uiRefs.BtnRemove.Add_Click({
-        Remove-QueueItem $itemId
-    })
+    $targetId = $itemData.Id
+    $uiRefs.BtnRemove.Tag = $targetId
+    $clickHandler = {
+        param($sender, $e)
+        $id = if ($sender -and $sender.Tag) { $sender.Tag } else { $targetId }
+        if ($id) {
+            Remove-QueueItem $id
+        }
+    }.GetNewClosure()
+    $uiRefs.BtnRemove.Add_Click($clickHandler)
 
     return $uiRefs
 }
@@ -650,6 +677,8 @@ function Add-UrlToQueue([string]$url) {
 }
 
 function Remove-QueueItem([string]$itemId) {
+    if (-not $itemId) { return }
+
     if ($global:EngineState.IsDownloading -and $global:EngineState.ActiveItemId -eq $itemId) {
         [System.Windows.MessageBox]::Show("This video is currently being downloaded and cannot be removed.", "Notice", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
         return
@@ -657,11 +686,13 @@ function Remove-QueueItem([string]$itemId) {
 
     if ($global:ItemUIMap.ContainsKey($itemId)) {
         $uiRefs = $global:ItemUIMap[$itemId]
-        $QueueContainer.Children.Remove($uiRefs.Card) | Out-Null
+        if ($uiRefs -and $uiRefs.Card) {
+            $QueueContainer.Children.Remove($uiRefs.Card) | Out-Null
+        }
         $global:ItemUIMap.Remove($itemId)
     }
 
-    $matchObj = $global:ItemsList | Where-Object { $_.Id -eq $itemId } | Select-Object -First 1
+    $matchObj = @($global:ItemsList) | Where-Object { $_.Id -eq $itemId } | Select-Object -First 1
     if ($matchObj) {
         $global:ItemsList.Remove($matchObj) | Out-Null
     }
