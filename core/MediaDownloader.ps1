@@ -1,4 +1,4 @@
-# ==============================================================================
+﻿# ==============================================================================
 # Media Downloader - Universal Video & Audio Downloader (MP4 / MP3)
 # Modern Multi-Video Queue GUI with Individual Progress Bars & Live Thumbnails
 # by BlAcky
@@ -780,7 +780,8 @@ $mainTimer.add_Tick({
 
             $speed = $global:EngineState.CurrentItemSpeed
             $eta   = $global:EngineState.CurrentItemEta
-            $detailStr = if ($speed) { " • $speed" } else { "" }
+            $bullet = [char]0x2022
+            $detailStr = if ($speed) { " $bullet $speed" } else { "" }
             $etaStr    = if ($eta) { " (ETA $eta)" } else { "" }
             $ui.TxtStatus.Text = "Downloading: $([math]::Round($pct))%$detailStr$etaStr"
 
@@ -1230,7 +1231,8 @@ function Check-Updates([bool]$silentIfCurrent = $false) {
         }
     }
 
-    $TxtFooter.Text = "Media Downloader • Ready"
+    $bullet = [char]0x2022
+    $TxtFooter.Text = "Media Downloader $bullet Ready"
 }
 
 # Check for updates
