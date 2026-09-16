@@ -2,7 +2,7 @@
 # Media Downloader - Universal Video & Audio Downloader (MP4 / MP3)
 # Modern Multi-Video Queue GUI with Individual Progress Bars & Live Thumbnails
 # by BlAcky
-# Version: 1.0.0
+# Version: 1.0.1
 # ==============================================================================
 
 # Hide background console window immediately if present
@@ -25,7 +25,7 @@ if ($consoleHwnd -ne [IntPtr]::Zero) {
 Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Drawing, System.Windows.Forms
 
 # Application Meta
-$AppVersion = "1.0.0"
+$AppVersion = "1.0.1"
 $AppTitle   = "Media Downloader"
 $GitHubRepo = "aowblacky/MediaDownloader"
 

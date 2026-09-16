@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "Media Downloader",
-  "releaseDate": "2026-09-16",
-  "changelog": "Initial release: Multi-video queue, live thumbnails, metadata detection, MP4/MP3 conversion, and background download engine.",
+  "releaseDate": "2026-09-17",
+  "changelog": "v1.0.1: Fixed queue item removal button (X), enhanced hover styling and feedback, and updated starter launcher.",
   "downloadUrl": "https://raw.githubusercontent.com/aowblacky/MediaDownloader/main/powershell/MediaDownloader.ps1"
 }
