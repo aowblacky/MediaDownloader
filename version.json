@@ -1,7 +1,7 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": "Media Downloader",
   "releaseDate": "2026-09-17",
-  "changelog": "v1.0.1: Cleaned project structure (only MediaDownloader.bat in root), modern Catppuccin Dark Update Popup dialog, and fixed queue item removal button.",
+  "changelog": "v1.0.2: Modern Catppuccin Dark Update Popup dialog, single MediaDownloader.bat root starter with core/ folder, and UTF-8 encoding fixes.",
   "downloadUrl": "https://raw.githubusercontent.com/aowblacky/MediaDownloader/main/core/MediaDownloader.ps1"
 }
