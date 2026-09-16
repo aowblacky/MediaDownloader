@@ -1201,12 +1201,15 @@ function Check-Updates([bool]$silentIfCurrent = $false) {
     }
 
     # 2. Check GitHub for Media Downloader App Update
-    $updateJsonUrl = "https://raw.githubusercontent.com/$GitHubRepo/main/version.json"
-    $scriptUrl     = "https://raw.githubusercontent.com/$GitHubRepo/main/core/MediaDownloader.ps1"
+    $cacheBust     = [System.Guid]::NewGuid().ToString("N")
+    $updateJsonUrl = "https://raw.githubusercontent.com/$GitHubRepo/main/version.json?cb=$cacheBust"
+    $scriptUrl     = "https://raw.githubusercontent.com/$GitHubRepo/main/core/MediaDownloader.ps1?cb=$cacheBust"
 
     try {
         $wc = New-Object System.Net.WebClient
         $wc.Headers.Add("User-Agent", "MediaDownloader-Updater")
+        $wc.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate")
+        $wc.Headers.Add("Pragma", "no-cache")
         $jsonStr = $wc.DownloadString($updateJsonUrl)
         $wc.Dispose()
 
@@ -1498,4 +1501,5 @@ $startupTimer.Start()
 # INITIAL STARTUP
 # ------------------------------------------------------------------------------
 $window.ShowDialog() | Out-Null
+
 
