@@ -1,0 +1,15 @@
+# Binaries (these are auto-downloaded on first run)
+bin/
+*.exe
+*.zip
+
+# Temporary & Log files
+*.tmp
+*.log
+*.bak
+settings.json
+
+# OS metadata
+Thumbs.db
+Desktop.ini
+.DS_Store

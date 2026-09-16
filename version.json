@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "name": "Media Downloader",
+  "releaseDate": "2026-09-16",
+  "changelog": "Initial release: Multi-video queue, live thumbnails, metadata detection, MP4/MP3 conversion, and background download engine.",
+  "downloadUrl": "https://raw.githubusercontent.com/aowblacky/MediaDownloader/main/MediaDownloader.ps1"
+}
