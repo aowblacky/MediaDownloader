@@ -1,7 +1,7 @@
 {
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": "Media Downloader",
   "releaseDate": "2026-09-17",
-  "changelog": "v1.0.2: Modern Catppuccin Dark Update Popup dialog, single MediaDownloader.bat root starter with core/ folder, and UTF-8 encoding fixes.",
+  "changelog": "v1.0.3: Complete Full-Repository ZIP Auto-Updater with automated directory migration, single root MediaDownloader.bat starter, and modern Catppuccin dark update popup.",
   "downloadUrl": "https://raw.githubusercontent.com/aowblacky/MediaDownloader/main/core/MediaDownloader.ps1"
 }
