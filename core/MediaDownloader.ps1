@@ -1145,44 +1145,112 @@ function Show-ModernUpdatePopup($remoteMeta, $currentVersion, $scriptUrl) {
         $DlgBtnLater.IsEnabled  = $false
         $DlgBtnClose.IsEnabled  = $false
         $DlgPnlProgress.Visibility = [System.Windows.Visibility]::Visible
-        $DlgTxtStatus.Text = "Downloading update from GitHub..."
+        $DlgTxtStatus.Text = "Downloading update package from GitHub..."
 
-        $targetFile = $MyInvocation.MyCommand.Path
-        if (-not $targetFile) { $targetFile = Join-Path $ScriptDir "MediaDownloader.ps1" }
-
-        $tempFile = Join-Path $env:TEMP "MediaDownloader_update.ps1"
+        $zipUrl = "https://github.com/$GitHubRepo/archive/refs/heads/main.zip"
+        $tempZip = Join-Path $env:TEMP "MediaDownloader_update.zip"
+        $tempExt = Join-Path $env:TEMP "MediaDownloader_extracted"
 
         try {
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+
             $wcDownload = New-Object System.Net.WebClient
-            $wcDownload.DownloadFile($scriptUrl, $tempFile)
+            $wcDownload.Headers.Add("User-Agent", "MediaDownloader-Updater")
+            $wcDownload.DownloadFile($zipUrl, $tempZip)
             $wcDownload.Dispose()
 
-            if ((Test-Path $tempFile) -and (Get-Item $tempFile).Length -gt 5000) {
-                $DlgTxtStatus.Text = "Installing update..."
-                Copy-Item -Path $targetFile -Destination "$targetFile.bak" -Force -ErrorAction SilentlyContinue
-                Copy-Item -Path $tempFile -Destination $targetFile -Force
-                Remove-Item -Path $tempFile -Force -ErrorAction SilentlyContinue
-
-                $DlgTxtStatus.Text = "Restarting application..."
-
-                $batStarter = Join-Path $RootDir "MediaDownloader.bat"
-                $vbsStarter = Join-Path $ScriptDir "launcher.vbs"
-
-                if (Test-Path $batStarter) {
-                    Start-Process "cmd.exe" -ArgumentList "/c `"$batStarter`"" -WindowStyle Hidden
-                } elseif (Test-Path $vbsStarter) {
-                    Start-Process "wscript.exe" -ArgumentList "`"$vbsStarter`""
-                } else {
-                    Start-Process "powershell.exe" -ArgumentList "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$targetFile`""
-                }
-
-                $dlgWindow.Close()
-                $window.Close()
-            } else {
-                $DlgTxtStatus.Text = "Download failed or corrupted."
-                $DlgBtnLater.IsEnabled = $true
+            if (Test-Path $tempExt) {
+                Remove-Item -Path $tempExt -Recurse -Force -ErrorAction SilentlyContinue
             }
+
+            [System.IO.Compression.ZipFile]::ExtractToDirectory($tempZip, $tempExt)
+
+            # Find extracted folder (e.g. MediaDownloader-main)
+            $extractedInner = Get-ChildItem -Path $tempExt | Where-Object { $_.PSIsContainer } | Select-Object -First 1
+            $sourceDir = if ($extractedInner) { $extractedInner.FullName } else { $tempExt }
+
+            $DlgTxtStatus.Text = "Updating files and folders..."
+
+            # 1. Update/Create core/ directory
+            $targetCore = Join-Path $RootDir "core"
+            $srcCore = Join-Path $sourceDir "core"
+            if (Test-Path $srcCore) {
+                if (-not (Test-Path $targetCore)) { New-Item -ItemType Directory -Path $targetCore -Force | Out-Null }
+                Get-ChildItem -Path $srcCore -File | ForEach-Object {
+                    Copy-Item -Path $_.FullName -Destination (Join-Path $targetCore $_.Name) -Force
+                }
+            }
+
+            # 2. Update Root files (MediaDownloader.bat, README.md, version.json)
+            $rootFiles = @("MediaDownloader.bat", "version.json", "README.md", ".gitignore")
+            foreach ($rf in $rootFiles) {
+                $srcFile = Join-Path $sourceDir $rf
+                if (Test-Path $srcFile) {
+                    Copy-Item -Path $srcFile -Destination (Join-Path $RootDir $rf) -Force
+                }
+            }
+
+            # 3. Clean up legacy root files if upgrading from older versions (e.g. Start.vbs, Start.bat)
+            $legacyFiles = @("Start.vbs", "Start.bat", "Start-MediaDownloader.bat", "Start-MediaDownloader.vbs")
+            foreach ($lf in $legacyFiles) {
+                $legacyPath = Join-Path $RootDir $lf
+                if (Test-Path $legacyPath) {
+                    Remove-Item -Path $legacyPath -Force -ErrorAction SilentlyContinue
+                }
+            }
+
+            # 4. Clean legacy powershell folder if core exists
+            $legacyPsDir = Join-Path $RootDir "powershell"
+            if ((Test-Path $targetCore) -and (Test-Path $legacyPsDir) -and ($targetCore -ne $legacyPsDir)) {
+                $oldSettings = Join-Path $legacyPsDir "settings.json"
+                $newSettings = Join-Path $targetCore "settings.json"
+                if ((Test-Path $oldSettings) -and -not (Test-Path $newSettings)) {
+                    Copy-Item -Path $oldSettings -Destination $newSettings -Force -ErrorAction SilentlyContinue
+                }
+                Remove-Item -Path $legacyPsDir -Recurse -Force -ErrorAction SilentlyContinue
+            }
+
+            # 5. Clean up temporary download files
+            Remove-Item -Path $tempZip -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $tempExt -Recurse -Force -ErrorAction SilentlyContinue
+
+            $DlgTxtStatus.Text = "Restarting application..."
+
+            # 6. Relaunch
+            $batStarter = Join-Path $RootDir "MediaDownloader.bat"
+            $vbsStarter = Join-Path $targetCore "launcher.vbs"
+
+            if (Test-Path $batStarter) {
+                Start-Process "cmd.exe" -ArgumentList "/c `"$batStarter`"" -WindowStyle Hidden
+            } elseif (Test-Path $vbsStarter) {
+                Start-Process "wscript.exe" -ArgumentList "`"$vbsStarter`""
+            } else {
+                $newScript = Join-Path $targetCore "MediaDownloader.ps1"
+                Start-Process "powershell.exe" -ArgumentList "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$newScript`""
+            }
+
+            $dlgWindow.Close()
+            $window.Close()
         } catch {
+            # Fallback to single-file script update if zip extraction fails
+            $DlgTxtStatus.Text = "Fallback: Updating script..."
+            try {
+                $targetFile = $MyInvocation.MyCommand.Path
+                if (-not $targetFile) { $targetFile = Join-Path $ScriptDir "MediaDownloader.ps1" }
+                $tempFile = Join-Path $env:TEMP "MediaDownloader_update.ps1"
+                $wc = New-Object System.Net.WebClient
+                $wc.DownloadFile($scriptUrl, $tempFile)
+                $wc.Dispose()
+                if ((Test-Path $tempFile) -and (Get-Item $tempFile).Length -gt 5000) {
+                    Copy-Item -Path $tempFile -Destination $targetFile -Force
+                    Remove-Item -Path $tempFile -Force -ErrorAction SilentlyContinue
+                    Start-Process "powershell.exe" -ArgumentList "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$targetFile`""
+                    $dlgWindow.Close()
+                    $window.Close()
+                    return
+                }
+            } catch {}
+
             $DlgTxtStatus.Text = "Error: $($_.Exception.Message)"
             $DlgBtnLater.IsEnabled = $true
         }
@@ -1501,5 +1569,6 @@ $startupTimer.Start()
 # INITIAL STARTUP
 # ------------------------------------------------------------------------------
 $window.ShowDialog() | Out-Null
+
 
 
