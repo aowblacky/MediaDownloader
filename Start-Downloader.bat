@@ -1,4 +1,0 @@
-@echo off
-cd /d "%~dp0"
-start "" powershell.exe -NoProfile -WindowStyle Hidden -STA -ExecutionPolicy Bypass -File "%~dp0YTDownloader.ps1"
-exit

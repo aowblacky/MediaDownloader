@@ -1,58 +1,58 @@
 ﻿# ⚡ Media Downloader (Universal Video & Audio Downloader)
 
-Ein modernes, leichtgewichtiges Windows-Tool zum gleichzeitigen Herunterladen und Konvertieren mehrerer Videos in **MP4** (Video) oder **MP3** (Audio).
-Unterstützt **YouTube**, **TikTok**, **Instagram**, **Twitter / X**, **Vimeo**, **Soundcloud**, **Twitch** und über 1.000 weitere Plattformen dank `yt-dlp` und `FFmpeg`.
+A modern, high-performance Windows desktop application to download and convert single or multiple videos and audio streams into **MP4** (Video) or **MP3** (Audio).  
+Powered by `yt-dlp` and `FFmpeg`, supporting **YouTube**, **TikTok**, **Instagram**, **Twitter / X**, **Vimeo**, **SoundCloud**, **Twitch**, and 1,000+ other platforms.
 
 ---
 
-## 🚀 Schnellstart
+## 🚀 Quick Start
 
-Einfach die Datei **`Start-MediaDownloader.vbs`** (oder `Start-MediaDownloader.bat`) per **Doppelklick** ausführen.
-- Es öffnet sich direkt die grafische Oberfläche – **garantiert ohne störendes schwarzes Konsolenfenster** im Hintergrund.
-- Beim ersten Start lädt das Programm automatisch die benötigten Tools (`yt-dlp.exe` und `ffmpeg.exe`) in den lokalen `bin/`-Ordner herunter.
+Simply double-click **`Start-MediaDownloader.vbs`** (or `Start-MediaDownloader.bat`).
+
+- ⚡ **Zero Console Flash**: Launches directly into the modern dark WPF interface with **100% hidden background console**.
+- 🛠️ **Automatic Dependency Setup**: On first launch, the required portable binaries (`yt-dlp.exe` and `ffmpeg.exe`) are automatically fetched into the local `bin/` folder.
 
 ---
 
 ## ✨ Features
 
-- 📋 **Batch-Warteschlange**: Beliebig viele Video-Links einfügen (einzeln oder per Multiline-Paste).
-- 🖼️ **Live-Vorschau**: Zeigt für jedes Video sofort das Vorschaubild (Thumbnail), den Videotitel und die Dauer an.
-- 📊 **Echtzeit-Fortschritt**: Individuelle Fortschrittsbalken pro Video mit Live-Geschwindigkeit (z. B. `4.2 MiB/s`) und verbleibender Zeit (ETA).
-- 🎵 **MP3 Audio-Konvertierung**:
-  - Höchste Audioqualität (VBR 0 / ~320 kbps).
-  - Automatisches Einbetten von Titel, Interpret und Cover-Art (Thumbnail).
-- 🎬 **MP4 Video-Konvertierung**:
-  - Wählbare Auflösungen: Beste Qualität (4K/Original), 1080p Full HD oder 720p HD.
-  - Automatisches Zusammenführen von separaten Audio-/Videospuren via FFmpeg.
-- 🔄 **GitHub & Tools Auto-Update**: 
-  - Mit dem Button *"🔄 Updates prüfen"* wird geprüft, ob eine neue Version von `Media Downloader` auf GitHub vorliegt oder neuere `yt-dlp`/`ffmpeg`-Versionen verfügbar sind.
-  - Updates können mit einem Klick automatisch geladen und installiert werden.
-- 📁 **Zielordner & Einstellungen merken**: 
-  - Standardmäßig unter `Downloads\MediaDownloader`, mit praktischem "Öffnen"-Button.
-  - Wenn du einen anderen Ordner oder ein anderes Format wählst, wird dies automatisch in `settings.json` gespeichert und bleibt bei jedem Neustart erhalten.
+- 📋 **Batch Queue Management**: Add single or multiple links at once (paste individual URLs or multiline batches with a single click).
+- 🖼️ **Live Metadata & Thumbnail Previews**: Displays video titles, uploader channels, duration, and cover thumbnails instantly for each item.
+- 📊 **Real-time Per-Item Progress**: Dedicated progress bar for every video displaying download percentage, transfer speed (e.g. `5.4 MiB/s`), and ETA.
+- 🎵 **High-Quality MP3 Conversion**:
+  - Highest audio quality (VBR 0 / ~320 kbps).
+  - Automatic cover art and metadata tagging.
+- 🎬 **MP4 Video Downloads**:
+  - Selectable quality profiles: Best Quality (Original/4K), 1080p Full HD, and 720p HD.
+  - Seamless stream remuxing and merging via FFmpeg.
+- 📁 **Smart Folder & Settings Memory**:
+  - Remembers your chosen download directory and preferred format across app restarts in a local `settings.json`.
+- 🔄 **Integrated GitHub Auto-Update**:
+  - Click **"⟳ Check for Updates"** to automatically check for newer app releases on GitHub and update `yt-dlp` / `ffmpeg` in the background.
 
 ---
 
-## 🛠️ Dateistruktur
+## 🛠️ Project Structure
 
 ```text
 Media Downloader/
-│── Start-MediaDownloader.vbs  # Empfohlener 1-Klick Starter (100% ohne Konsolenfenster)
-│── Start-MediaDownloader.bat  # Alternativer Windows Batch Starter
-│── MediaDownloader.ps1        # Hauptprogramm (WPF Dark UI & Multi-Threading Engine)
-│── Setup-Dependencies.ps1     # Bootstrapper für yt-dlp & FFmpeg
-│── version.json               # Versionsdatei für GitHub Auto-Updates
-│── .gitignore                 # Schließt große Binärdateien (bin/) von Git aus
-│── bin/                       # Lokale Tools (wird bei Bedarf automatisch geladen)
+│── Start-MediaDownloader.vbs  # Recommended 1-click launcher (pure GUI, 0 console window)
+│── Start-MediaDownloader.bat  # Alternative Windows batch launcher
+│── MediaDownloader.ps1        # Main application (WPF Dark UI + Runspace engine)
+│── Setup-Dependencies.ps1     # Bootstrapper for yt-dlp & FFmpeg
+│── version.json               # Version descriptor for GitHub updates
+│── settings.json              # Local persistent user preferences (ignored by git)
+│── .gitignore                 # Excludes binary folder (bin/) and local config
+│── bin/                       # Portable tools (auto-downloaded on first start)
 │   ├── yt-dlp.exe
 │   ├── ffmpeg.exe
 │   └── ffprobe.exe
-└── README.md                  # Dokumentation
+└── README.md                  # Documentation
 ```
 
 ---
 
-## ⚙️ Systemvoraussetzungen
+## ⚙️ System Requirements
 
-- **Windows 10 / 11** oder Windows Server (mit PowerShell 5.1 oder neuer)
-- Aktive Internetverbindung für Downloads
+- **Windows 10 / 11** or Windows Server (with PowerShell 5.1 or higher)
+- Active Internet connection for downloads

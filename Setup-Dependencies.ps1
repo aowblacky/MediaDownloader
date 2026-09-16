@@ -1,6 +1,6 @@
-﻿# ==============================================================================
+# ==============================================================================
 # Setup-Dependencies.ps1 - Media Downloader Tool Bootstrapper
-# Schneller & zuverlässiger Download von yt-dlp.exe und ffmpeg.exe
+# Fast & reliable bootstrap downloader for yt-dlp.exe and ffmpeg.exe
 # ==============================================================================
 
 param(
@@ -14,8 +14,8 @@ if (-not (Test-Path -Path $BinDir)) {
     New-Item -ItemType Directory -Path $BinDir -Force | Out-Null
 }
 
-$ytDlpPath  = Join-Path $BinDir "yt-dlp.exe"
-$ffmpegPath = Join-Path $BinDir "ffmpeg.exe"
+$ytDlpPath   = Join-Path $BinDir "yt-dlp.exe"
+$ffmpegPath  = Join-Path $BinDir "ffmpeg.exe"
 $ffprobePath = Join-Path $BinDir "ffprobe.exe"
 
 function Write-LogMessage {
@@ -27,18 +27,18 @@ function Write-LogMessage {
 function Download-Fast {
     param([string]$Url, [string]$Destination)
     
-    # Prüfe ob curl.exe vorhanden ist (extrem schnell)
+    # Check if curl.exe is available (fast and reliable)
     $curl = Get-Command "curl.exe" -ErrorAction SilentlyContinue
     if ($curl) {
-        Write-LogMessage "Lade mit curl: $Url"
+        Write-LogMessage "Downloading with curl: $Url"
         & $curl.Source -L "$Url" -o "$Destination" --retry 3 --silent --show-error
         if ((Test-Path $Destination) -and (Get-Item $Destination).Length -gt 1000000) {
             return $true
         }
     }
 
-    # Fallback: WebClient
-    Write-LogMessage "Lade mit .NET WebClient: $Url"
+    # Fallback: .NET WebClient
+    Write-LogMessage "Downloading with .NET WebClient: $Url"
     $webClient = New-Object System.Net.WebClient
     $webClient.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
     $webClient.DownloadFile($Url, $Destination)
@@ -48,28 +48,28 @@ function Download-Fast {
 
 # 1. yt-dlp.exe
 if ($ForceUpdate -or -not (Test-Path $ytDlpPath)) {
-    Write-LogMessage "Lade neueste yt-dlp.exe herunter..."
+    Write-LogMessage "Downloading latest yt-dlp.exe..."
     $ytDlpUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
     try {
         Download-Fast -Url $ytDlpUrl -Destination $ytDlpPath
-        Write-LogMessage "yt-dlp.exe erfolgreich bereitgestellt." "OK"
+        Write-LogMessage "yt-dlp.exe successfully set up." "OK"
     } catch {
-        Write-LogMessage "Fehler beim Herunterladen von yt-dlp: $_" "ERROR"
+        Write-LogMessage "Error downloading yt-dlp: $_" "ERROR"
     }
 } else {
-    Write-LogMessage "yt-dlp.exe ist bereits vorhanden." "OK"
+    Write-LogMessage "yt-dlp.exe is already present." "OK"
 }
 
 # 2. ffmpeg.exe & ffprobe.exe
 if (-not (Test-Path $ffmpegPath) -or -not (Test-Path $ffprobePath)) {
-    Write-LogMessage "Lade FFmpeg herunter..."
+    Write-LogMessage "Downloading FFmpeg..."
     $ffmpegZipUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
     $tempZip = Join-Path $env:TEMP "ffmpeg-temp.zip"
     $tempExtract = Join-Path $env:TEMP "ffmpeg-extract-$(Get-Random)"
 
     try {
         Download-Fast -Url $ffmpegZipUrl -Destination $tempZip
-        Write-LogMessage "Entpacke FFmpeg Archive..."
+        Write-LogMessage "Extracting FFmpeg archive..."
         
         Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
 
@@ -78,22 +78,22 @@ if (-not (Test-Path $ffmpegPath) -or -not (Test-Path $ffprobePath)) {
 
         if ($foundFfmpeg) {
             Copy-Item -Path $foundFfmpeg.FullName -Destination $ffmpegPath -Force
-            Write-LogMessage "ffmpeg.exe kopiert." "OK"
+            Write-LogMessage "ffmpeg.exe copied." "OK"
         }
         if ($foundFfprobe) {
             Copy-Item -Path $foundFfprobe.FullName -Destination $ffprobePath -Force
-            Write-LogMessage "ffprobe.exe kopiert." "OK"
+            Write-LogMessage "ffprobe.exe copied." "OK"
         }
 
         Remove-Item -Path $tempZip -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
 
-        Write-LogMessage "FFmpeg erfolgreich bereitgestellt." "OK"
+        Write-LogMessage "FFmpeg successfully set up." "OK"
     } catch {
-        Write-LogMessage "Fehler beim Bereitstellen von FFmpeg: $_" "ERROR"
+        Write-LogMessage "Error setting up FFmpeg: $_" "ERROR"
     }
 } else {
-    Write-LogMessage "FFmpeg ist bereits vorhanden." "OK"
+    Write-LogMessage "FFmpeg is already present." "OK"
 }
 
-Write-LogMessage "Setup der Tools abgeschlossen." "DONE"
+Write-LogMessage "Tools setup completed." "DONE"
