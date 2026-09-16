@@ -1,4 +1,4 @@
-﻿# ⚡ Media Downloader (Universal Video & Audio Downloader)
+# ⚡ Media Downloader (Universal Video & Audio Downloader)
 
 A modern, high-performance Windows desktop application to download and convert single or multiple videos and audio streams into **MP4** (Video) or **MP3** (Audio).  
 Powered by `yt-dlp` and `FFmpeg`, supporting **YouTube**, **TikTok**, **Instagram**, **Twitter / X**, **Vimeo**, **SoundCloud**, **Twitch**, and 1,000+ other platforms.
@@ -7,7 +7,7 @@ Powered by `yt-dlp` and `FFmpeg`, supporting **YouTube**, **TikTok**, **Instagra
 
 ## 🚀 Quick Start
 
-Simply double-click **`Start-MediaDownloader.vbs`** (or `Start-MediaDownloader.bat`).
+Simply double-click **`Start.bat`** (or `Start.vbs`).
 
 - ⚡ **Zero Console Flash**: Launches directly into the modern dark WPF interface with **100% hidden background console**.
 - 🛠️ **Automatic Dependency Setup**: On first launch, the required portable binaries (`yt-dlp.exe` and `ffmpeg.exe`) are automatically fetched into the local `bin/` folder.
@@ -27,8 +27,9 @@ Simply double-click **`Start-MediaDownloader.vbs`** (or `Start-MediaDownloader.b
   - Seamless stream remuxing and merging via FFmpeg.
 - 📁 **Smart Folder & Settings Memory**:
   - Remembers your chosen download directory and preferred format across app restarts in a local `settings.json`.
-- 🔄 **Integrated GitHub Auto-Update**:
-  - Click **"⟳ Check for Updates"** to automatically check for newer app releases on GitHub and update `yt-dlp` / `ffmpeg` in the background.
+- 🔄 **Automatic Startup Update Check**:
+  - Automatically checks GitHub for new updates on launch and displays a release popup with changelogs and 1-click self-updating.
+  - You can also manually trigger checks anytime via **"⟳ Check for Updates"**.
 
 ---
 
@@ -36,18 +37,19 @@ Simply double-click **`Start-MediaDownloader.vbs`** (or `Start-MediaDownloader.b
 
 ```text
 Media Downloader/
-│── Start-MediaDownloader.vbs  # Recommended 1-click launcher (pure GUI, 0 console window)
-│── Start-MediaDownloader.bat  # Alternative Windows batch launcher
-│── MediaDownloader.ps1        # Main application (WPF Dark UI + Runspace engine)
-│── Setup-Dependencies.ps1     # Bootstrapper for yt-dlp & FFmpeg
-│── version.json               # Version descriptor for GitHub updates
-│── settings.json              # Local persistent user preferences (ignored by git)
-│── .gitignore                 # Excludes binary folder (bin/) and local config
-│── bin/                       # Portable tools (auto-downloaded on first start)
-│   ├── yt-dlp.exe
-│   ├── ffmpeg.exe
-│   └── ffprobe.exe
-└── README.md                  # Documentation
+│── Start.bat                 # 1-Click Starter in root folder
+│── Start.vbs                 # Silent background starter
+│── README.md                 # Documentation
+│── version.json              # Version descriptor for GitHub updates
+│── .gitignore                # Excludes binary folder (bin/) and local config
+│── powershell/               # Application source code & scripts
+│   ├── MediaDownloader.ps1   # Main GUI application (WPF Dark UI + Runspace engine)
+│   ├── Setup-Dependencies.ps1# Bootstrapper for yt-dlp & FFmpeg
+│   └── settings.json         # Local user preferences (remembered paths & formats)
+└── bin/                      # Portable tools (auto-downloaded on first start)
+    ├── yt-dlp.exe
+    ├── ffmpeg.exe
+    └── ffprobe.exe
 ```
 
 ---

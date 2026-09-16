@@ -37,9 +37,15 @@ if (-not $ScriptDir) {
     $ScriptDir = Get-Location
 }
 
-$BinDir    = Join-Path $ScriptDir "bin"
-$YtDlpExe  = Join-Path $BinDir "yt-dlp.exe"
-$FfmpegExe = Join-Path $BinDir "ffmpeg.exe"
+# Resolve Root Directory
+$RootDir = Split-Path -Parent $ScriptDir
+if (-not (Test-Path (Join-Path $RootDir "powershell"))) {
+    $RootDir = $ScriptDir
+}
+
+$BinDir     = Join-Path $RootDir "bin"
+$YtDlpExe   = Join-Path $BinDir "yt-dlp.exe"
+$FfmpegExe  = Join-Path $BinDir "ffmpeg.exe"
 $ConfigFile = Join-Path $ScriptDir "settings.json"
 
 # Default Download Directory (Downloads\MediaDownloader)
@@ -894,7 +900,7 @@ function Check-Updates([bool]$silentIfCurrent = $false) {
 
     # 2. Check GitHub for Media Downloader App Update
     $updateJsonUrl = "https://raw.githubusercontent.com/$GitHubRepo/main/version.json"
-    $scriptUrl     = "https://raw.githubusercontent.com/$GitHubRepo/main/MediaDownloader.ps1"
+    $scriptUrl     = "https://raw.githubusercontent.com/$GitHubRepo/main/powershell/MediaDownloader.ps1"
 
     try {
         $wc = New-Object System.Net.WebClient
@@ -929,9 +935,12 @@ function Check-Updates([bool]$silentIfCurrent = $false) {
                     [System.Windows.MessageBox]::Show("Update installed successfully! The application will now restart.", "Update Complete", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
 
                     # Relaunch & Exit
-                    $vbsStarter = Join-Path $ScriptDir "Start-MediaDownloader.vbs"
+                    $vbsStarter = Join-Path $RootDir "Start.vbs"
+                    $batStarter = Join-Path $RootDir "Start.bat"
                     if (Test-Path $vbsStarter) {
                         Start-Process "wscript.exe" -ArgumentList "`"$vbsStarter`""
+                    } elseif (Test-Path $batStarter) {
+                        Start-Process "cmd.exe" -ArgumentList "/c `"$batStarter`"" -WindowStyle Hidden
                     } else {
                         Start-Process "powershell.exe" -ArgumentList "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$targetFile`""
                     }
@@ -1204,6 +1213,17 @@ $BtnStartDownload.Add_Click({
     $ps.AddScript($queueWorkerScript).AddArgument($taskConfig).AddArgument($global:EngineState) | Out-Null
     $ps.BeginInvoke() | Out-Null
 })
+
+# ------------------------------------------------------------------------------
+# AUTOMATIC BACKGROUND UPDATE CHECK ON STARTUP
+# ------------------------------------------------------------------------------
+$startupTimer = New-Object System.Windows.Threading.DispatcherTimer
+$startupTimer.Interval = [TimeSpan]::FromMilliseconds(1500)
+$startupTimer.add_Tick({
+    $startupTimer.Stop()
+    Check-Updates -silentIfCurrent $true
+})
+$startupTimer.Start()
 
 # ------------------------------------------------------------------------------
 # INITIAL STARTUP
