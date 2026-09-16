@@ -7,7 +7,7 @@ Powered by `yt-dlp` and `FFmpeg`, supporting **YouTube**, **TikTok**, **Instagra
 
 ## 🚀 Quick Start
 
-Simply double-click **`MediaDownloader.bat`** (or `Start.vbs`).
+Simply double-click **`MediaDownloader.bat`**.
 
 - ⚡ **Zero Console Flash**: Launches directly into the modern dark WPF interface with **100% hidden background console**.
 - 🛠️ **Automatic Dependency Setup**: On first launch, the required portable binaries (`yt-dlp.exe` and `ffmpeg.exe`) are automatically fetched into the local `bin/` folder.
@@ -37,14 +37,14 @@ Simply double-click **`MediaDownloader.bat`** (or `Start.vbs`).
 
 ```text
 Media Downloader/
-│── MediaDownloader.bat       # 1-Click Starter in root folder
-│── Start.vbs                 # Silent background starter
+│── MediaDownloader.bat       # Single 1-Click Starter in root folder
 │── README.md                 # Documentation
 │── version.json              # Version descriptor for GitHub updates
 │── .gitignore                # Excludes binary folder (bin/) and local config
-│── powershell/               # Application source code & scripts
+│── core/                     # Application source code & scripts
 │   ├── MediaDownloader.ps1   # Main GUI application (WPF Dark UI + Runspace engine)
 │   ├── Setup-Dependencies.ps1# Bootstrapper for yt-dlp & FFmpeg
+│   ├── launcher.vbs          # Silent background launcher
 │   └── settings.json         # Local user preferences (remembered paths & formats)
 └── bin/                      # Portable tools (auto-downloaded on first start)
     ├── yt-dlp.exe

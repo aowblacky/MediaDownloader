@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # Setup-Dependencies.ps1 - Media Downloader Tool Bootstrapper
 # Fast & reliable bootstrap downloader for yt-dlp.exe and ffmpeg.exe
 # ==============================================================================
@@ -12,7 +12,7 @@ param(
 
 if (-not $BinDir) {
     $parent = Split-Path -Parent $PSScriptRoot
-    if (Test-Path (Join-Path $parent "powershell")) {
+    if ((Test-Path (Join-Path $parent "core")) -or (Test-Path (Join-Path $parent "powershell"))) {
         $BinDir = Join-Path $parent "bin"
     } else {
         $BinDir = Join-Path $PSScriptRoot "bin"

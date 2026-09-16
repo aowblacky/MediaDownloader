@@ -2,6 +2,6 @@
   "version": "1.0.1",
   "name": "Media Downloader",
   "releaseDate": "2026-09-17",
-  "changelog": "v1.0.1: Fixed queue item removal button (X), enhanced hover styling and feedback, and updated starter launcher.",
-  "downloadUrl": "https://raw.githubusercontent.com/aowblacky/MediaDownloader/main/powershell/MediaDownloader.ps1"
+  "changelog": "v1.0.1: Cleaned project structure (only MediaDownloader.bat in root), modern Catppuccin Dark Update Popup dialog, and fixed queue item removal button.",
+  "downloadUrl": "https://raw.githubusercontent.com/aowblacky/MediaDownloader/main/core/MediaDownloader.ps1"
 }

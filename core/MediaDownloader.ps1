@@ -39,7 +39,7 @@ if (-not $ScriptDir) {
 
 # Resolve Root Directory
 $RootDir = Split-Path -Parent $ScriptDir
-if (-not (Test-Path (Join-Path $RootDir "powershell"))) {
+if (-not (Test-Path (Join-Path $RootDir "core")) -and -not (Test-Path (Join-Path $RootDir "powershell"))) {
     $RootDir = $ScriptDir
 }
 
@@ -918,8 +918,278 @@ $BtnOpenFolder.Add_Click({
 })
 
 # ------------------------------------------------------------------------------
-# AUTO-UPDATE LOGIC FOR APP & TOOLS
+# AUTO-UPDATE & MODAL DIALOGS (Styled Catppuccin Theme)
 # ------------------------------------------------------------------------------
+function Show-ModernInfoDialog([string]$title, [string]$message, [string]$statusType = "info") {
+    $icon = switch ($statusType) {
+        "success" { "&#x2714;" }
+        "warning" { "&#x26A0;" }
+        "error"   { "&#x2716;" }
+        default   { "&#x2139;" }
+    }
+    $iconColor = switch ($statusType) {
+        "success" { "#A6E3A1" }
+        "warning" { "#F9E2AF" }
+        "error"   { "#F38BA8" }
+        default   { "#89B4FA" }
+    }
+
+    $infoXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="$title" Width="440" Height="220"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" WindowStyle="None"
+        AllowsTransparency="True" Background="Transparent"
+        FontFamily="Segoe UI, Segoe UI Emoji, Segoe UI Symbol">
+    <Border Background="#1E1E2E" CornerRadius="12" BorderBrush="#45475A" BorderThickness="1.5">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="25" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.7"/>
+        </Border.Effect>
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                <TextBlock Text="$icon" FontSize="18" Foreground="$iconColor" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                <TextBlock Text="$title" FontSize="16" FontWeight="Bold" Foreground="#CDD6F4" VerticalAlignment="Center"/>
+            </StackPanel>
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,14">
+                <TextBlock Text="$([System.Security.SecurityElement]::Escape($message))" FontSize="12" Foreground="#BAC2DE" TextWrapping="Wrap" LineHeight="18"/>
+            </ScrollViewer>
+            <Button x:Name="BtnOk" Grid.Row="2" Content="OK" HorizontalAlignment="Right" Width="90" Height="32"
+                    Background="#89B4FA" Foreground="#11111B" FontSize="12" FontWeight="Bold" BorderThickness="0" Cursor="Hand">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#B4BEFE"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Grid>
+    </Border>
+</Window>
+"@
+    $sReader = New-Object System.IO.StringReader $infoXaml
+    $xReader = [System.Xml.XmlReader]::Create($sReader)
+    $infoWindow = [System.Windows.Markup.XamlReader]::Load($xReader)
+    $infoWindow.Owner = $window
+
+    $infoWindow.Add_MouseLeftButtonDown({
+        try { $infoWindow.DragMove() } catch {}
+    })
+    $BtnOk = $infoWindow.FindName("BtnOk")
+    $BtnOk.Add_Click({ $infoWindow.Close() })
+    $infoWindow.ShowDialog() | Out-Null
+}
+
+function Show-ModernUpdatePopup($remoteMeta, $currentVersion, $scriptUrl) {
+    $dialogXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Update Available - Media Downloader"
+        Width="500" Height="420"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        FontFamily="Segoe UI, Segoe UI Emoji, Segoe UI Symbol">
+    
+    <Border Background="#1E1E2E" CornerRadius="12" BorderBrush="#45475A" BorderThickness="1.5">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.7"/>
+        </Border.Effect>
+        <Grid Margin="22">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- 0: Header -->
+                <RowDefinition Height="Auto"/> <!-- 1: Version Badges -->
+                <RowDefinition Height="*"/>    <!-- 2: Changelog Card -->
+                <RowDefinition Height="Auto"/> <!-- 3: Progress/Status -->
+                <RowDefinition Height="Auto"/> <!-- 4: Bottom Buttons -->
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Grid Grid.Row="0" Margin="0,0,0,14">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#x26A1;" FontSize="20" Foreground="#89B4FA" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="New Version Available!" FontSize="17" FontWeight="Bold" Foreground="#CDD6F4" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button x:Name="DlgBtnClose" Content="&#x2715;" HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Background="Transparent" Foreground="#6C7086" BorderThickness="0" FontSize="14" FontWeight="Bold" Cursor="Hand" Padding="6,2">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="cb" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                <TextBlock x:Name="ct" Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="cb" Property="Background" Value="#313244"/>
+                                    <Setter TargetName="ct" Property="Foreground" Value="#F38BA8"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
+
+            <!-- Version Badges -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,14" VerticalAlignment="Center">
+                <Border Background="#313244" CornerRadius="6" Padding="10,4">
+                    <TextBlock x:Name="DlgTxtOldVer" Text="Current: v$currentVersion" FontSize="12" Foreground="#BAC2DE"/>
+                </Border>
+                <TextBlock Text="&#x2794;" FontSize="13" Foreground="#89B4FA" Margin="10,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                <Border Background="#A6E3A1" CornerRadius="6" Padding="10,4">
+                    <TextBlock x:Name="DlgTxtNewVer" Text="New: v$($remoteMeta.version)" FontSize="12" FontWeight="Bold" Foreground="#11111B"/>
+                </Border>
+            </StackPanel>
+
+            <!-- Changelog Card -->
+            <Border Grid.Row="2" Background="#181825" CornerRadius="8" BorderBrush="#313244" BorderThickness="1" Padding="12" Margin="0,0,0,14">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="&#x1F4CB; What's new in this release:" FontWeight="SemiBold" FontSize="12" Foreground="#89B4FA" Margin="0,0,0,6"/>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <TextBlock x:Name="DlgTxtChangelog" Text="$([System.Security.SecurityElement]::Escape($remoteMeta.changelog))" FontSize="12" Foreground="#CDD6F4" TextWrapping="Wrap" LineHeight="18"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- Progress / Status Area -->
+            <StackPanel x:Name="DlgPnlProgress" Grid.Row="3" Margin="0,0,0,12" Visibility="Collapsed">
+                <TextBlock x:Name="DlgTxtStatus" Text="Downloading update..." FontSize="12" Foreground="#89B4FA" Margin="0,0,0,6"/>
+                <ProgressBar Height="5" IsIndeterminate="True" Foreground="#89B4FA" Background="#313244" BorderThickness="0">
+                    <ProgressBar.Clip>
+                        <RectangleGeometry RadiusX="2.5" RadiusY="2.5" Rect="0,0,450,5"/>
+                    </ProgressBar.Clip>
+                </ProgressBar>
+            </StackPanel>
+
+            <!-- Bottom Buttons -->
+            <Grid Grid.Row="4">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="DlgBtnLater" Content="Later" Width="90" Height="34" Margin="0,0,10,0"
+                            Background="#313244" Foreground="#CDD6F4" FontSize="12" FontWeight="SemiBold" BorderThickness="0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="6">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="b" Property="Background" Value="#45475A"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <Button x:Name="DlgBtnUpdate" Content="&#x1F680; Update &amp; Restart" Width="170" Height="34"
+                            Background="#89B4FA" Foreground="#11111B" FontSize="12" FontWeight="Bold" BorderThickness="0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="6">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="b" Property="Background" Value="#B4BEFE"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter TargetName="b" Property="Background" Value="#45475A"/>
+                                        <Setter Property="Foreground" Value="#6C7086"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
+"@
+
+    $sReader = New-Object System.IO.StringReader $dialogXaml
+    $xReader = [System.Xml.XmlReader]::Create($sReader)
+    $dlgWindow = [System.Windows.Markup.XamlReader]::Load($xReader)
+    $dlgWindow.Owner = $window
+
+    # Drag window
+    $dlgWindow.Add_MouseLeftButtonDown({
+        try { $dlgWindow.DragMove() } catch {}
+    })
+
+    $DlgBtnClose       = $dlgWindow.FindName("DlgBtnClose")
+    $DlgBtnLater       = $dlgWindow.FindName("DlgBtnLater")
+    $DlgBtnUpdate      = $dlgWindow.FindName("DlgBtnUpdate")
+    $DlgPnlProgress    = $dlgWindow.FindName("DlgPnlProgress")
+    $DlgTxtStatus      = $dlgWindow.FindName("DlgTxtStatus")
+
+    $DlgBtnClose.Add_Click({ $dlgWindow.Close() })
+    $DlgBtnLater.Add_Click({ $dlgWindow.Close() })
+
+    $DlgBtnUpdate.Add_Click({
+        $DlgBtnUpdate.IsEnabled = $false
+        $DlgBtnLater.IsEnabled  = $false
+        $DlgBtnClose.IsEnabled  = $false
+        $DlgPnlProgress.Visibility = [System.Windows.Visibility]::Visible
+        $DlgTxtStatus.Text = "Downloading update from GitHub..."
+
+        $targetFile = $MyInvocation.MyCommand.Path
+        if (-not $targetFile) { $targetFile = Join-Path $ScriptDir "MediaDownloader.ps1" }
+
+        $tempFile = Join-Path $env:TEMP "MediaDownloader_update.ps1"
+
+        try {
+            $wcDownload = New-Object System.Net.WebClient
+            $wcDownload.DownloadFile($scriptUrl, $tempFile)
+            $wcDownload.Dispose()
+
+            if ((Test-Path $tempFile) -and (Get-Item $tempFile).Length -gt 5000) {
+                $DlgTxtStatus.Text = "Installing update..."
+                Copy-Item -Path $targetFile -Destination "$targetFile.bak" -Force -ErrorAction SilentlyContinue
+                Copy-Item -Path $tempFile -Destination $targetFile -Force
+                Remove-Item -Path $tempFile -Force -ErrorAction SilentlyContinue
+
+                $DlgTxtStatus.Text = "Restarting application..."
+
+                $batStarter = Join-Path $RootDir "MediaDownloader.bat"
+                $vbsStarter = Join-Path $ScriptDir "launcher.vbs"
+
+                if (Test-Path $batStarter) {
+                    Start-Process "cmd.exe" -ArgumentList "/c `"$batStarter`"" -WindowStyle Hidden
+                } elseif (Test-Path $vbsStarter) {
+                    Start-Process "wscript.exe" -ArgumentList "`"$vbsStarter`""
+                } else {
+                    Start-Process "powershell.exe" -ArgumentList "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$targetFile`""
+                }
+
+                $dlgWindow.Close()
+                $window.Close()
+            } else {
+                $DlgTxtStatus.Text = "Download failed or corrupted."
+                $DlgBtnLater.IsEnabled = $true
+            }
+        } catch {
+            $DlgTxtStatus.Text = "Error: $($_.Exception.Message)"
+            $DlgBtnLater.IsEnabled = $true
+        }
+    })
+
+    $dlgWindow.ShowDialog() | Out-Null
+}
+
 function Check-Updates([bool]$silentIfCurrent = $false) {
     $TxtFooter.Text = "Checking for updates..."
 
@@ -931,7 +1201,7 @@ function Check-Updates([bool]$silentIfCurrent = $false) {
 
     # 2. Check GitHub for Media Downloader App Update
     $updateJsonUrl = "https://raw.githubusercontent.com/$GitHubRepo/main/version.json"
-    $scriptUrl     = "https://raw.githubusercontent.com/$GitHubRepo/main/powershell/MediaDownloader.ps1"
+    $scriptUrl     = "https://raw.githubusercontent.com/$GitHubRepo/main/core/MediaDownloader.ps1"
 
     try {
         $wc = New-Object System.Net.WebClient
@@ -944,44 +1214,10 @@ function Check-Updates([bool]$silentIfCurrent = $false) {
         $currentVer = [version]$AppVersion
 
         if ($remoteVer -gt $currentVer) {
-            $msg = "A new version of Media Downloader is available!`n`nCurrent version: v$AppVersion`nLatest version:  v$($remoteMeta.version)`n`nChangelog:`n$($remoteMeta.changelog)`n`nWould you like to download and install the update now?"
-            $res = [System.Windows.MessageBox]::Show($msg, "App Update Available", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Information)
-
-            if ($res -eq [System.Windows.MessageBoxResult]::Yes) {
-                $TxtFooter.Text = "Downloading update..."
-                $targetFile = $MyInvocation.MyCommand.Path
-                if (-not $targetFile) { $targetFile = Join-Path $ScriptDir "MediaDownloader.ps1" }
-
-                $tempFile = Join-Path $env:TEMP "MediaDownloader_update.ps1"
-                $wcDownload = New-Object System.Net.WebClient
-                $wcDownload.DownloadFile($scriptUrl, $tempFile)
-                $wcDownload.Dispose()
-
-                if ((Test-Path $tempFile) -and (Get-Item $tempFile).Length -gt 5000) {
-                    # Backup old version and overwrite
-                    Copy-Item -Path $targetFile -Destination "$targetFile.bak" -Force -ErrorAction SilentlyContinue
-                    Copy-Item -Path $tempFile -Destination $targetFile -Force
-                    Remove-Item -Path $tempFile -Force -ErrorAction SilentlyContinue
-
-                    [System.Windows.MessageBox]::Show("Update installed successfully! The application will now restart.", "Update Complete", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
-
-                    # Relaunch & Exit
-                    $vbsStarter = Join-Path $RootDir "Start.vbs"
-                    $batStarter = Join-Path $RootDir "Start.bat"
-                    if (Test-Path $vbsStarter) {
-                        Start-Process "wscript.exe" -ArgumentList "`"$vbsStarter`""
-                    } elseif (Test-Path $batStarter) {
-                        Start-Process "cmd.exe" -ArgumentList "/c `"$batStarter`"" -WindowStyle Hidden
-                    } else {
-                        Start-Process "powershell.exe" -ArgumentList "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$targetFile`""
-                    }
-                    $window.Close()
-                    return
-                }
-            }
+            Show-ModernUpdatePopup -remoteMeta $remoteMeta -currentVersion $AppVersion -scriptUrl $scriptUrl
         } else {
             if (-not $silentIfCurrent) {
-                [System.Windows.MessageBox]::Show("Media Downloader and all tools are up to date! (v$AppVersion)", "Up to Date", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+                Show-ModernInfoDialog -title "Up to Date" -message "Media Downloader and all tools are fully up to date! (v$AppVersion)" -statusType "success"
             }
         }
     } catch {
@@ -990,7 +1226,7 @@ function Check-Updates([bool]$silentIfCurrent = $false) {
             if ($errText -match "404") {
                 $errText = "Repository is currently Private or version.json is not yet published.`n`nTo allow your friends and the app to check for updates, set your repository visibility to 'Public' on GitHub (Settings -> Change visibility)."
             }
-            [System.Windows.MessageBox]::Show("yt-dlp and FFmpeg are being updated in the background.`n`nGitHub check note:`n$errText", "Tools & Update Status", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+            Show-ModernInfoDialog -title "Update Status" -message "yt-dlp and FFmpeg are being updated in the background.`n`nGitHub check note:`n$errText" -statusType "info"
         }
     }
 
