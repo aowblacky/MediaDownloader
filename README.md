@@ -1,4 +1,4 @@
-# ⚡ Media Downloader (Universal Video & Audio Downloader)
+# Media Downloader (Universal Video & Audio Downloader)
 
 A modern, high-performance Windows desktop application to download and convert single or multiple videos and audio streams into **MP4** (Video) or **MP3** (Audio).  
 Powered by `yt-dlp` and `FFmpeg`, supporting **YouTube**, **TikTok**, **Instagram**, **Twitter / X**, **Vimeo**, **SoundCloud**, **Twitch**, and 1,000+ other platforms.
