@@ -1,7 +1,7 @@
 {
-  "version": "1.0.3",
+  "version": "1.1.0",
   "name": "Media Downloader",
   "releaseDate": "2026-09-17",
-  "changelog": "v1.0.3: Complete Full-Repository ZIP Auto-Updater with automated directory migration, single root MediaDownloader.bat starter, and modern Catppuccin dark update popup.",
+  "changelog": "v1.1.0: Major Feature Update - Dedicated Video Settings Modal with ID3-Tag & Metadata Editor, Interactive Trimming Timeline with dual slider markers & automatic unedited file cleanup, Per-video YouTube SponsorBlock skipping toggle, Native Windows Win32 Clipboard Link Monitor (Auto-Paste), Quick Actions & Right-Click Context Menus, Download Speed Limiter, and Windows Toast & Tray Completion Notifications.",
   "downloadUrl": "https://raw.githubusercontent.com/aowblacky/MediaDownloader/main/core/MediaDownloader.ps1"
 }
